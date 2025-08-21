@@ -1,0 +1,217 @@
+from collections import defaultdict
+
+darling_menu = {
+    "Starters": {
+        "1": ("Veg Manchurian (Dry)", 120),
+        "2": ("Paneer Tikka", 150),
+        "3": ("Chicken 65", 180),
+        "4": ("Chilli Gobi", 130)
+    },
+    "Main Course": {
+        "5": ("Veg Biryani", 160),
+        "6": ("Paneer Butter Masala", 190),
+        "7": ("Chicken Biryani", 220),
+        "8": ("Mutton Curry", 280),
+        "9": ("Dal Tadka", 140),
+        "10": ("Butter Naan", 40)
+    },
+    "Snacks": {
+        "11": ("Veg Burger", 100),
+        "12": ("French Fries", 90),
+        "13": ("Chicken Roll", 120),
+        "14": ("Samosa (2 pcs)", 40)
+    },
+    "Desserts": {
+        "15": ("Gulab Jamun (2 pcs)", 60),
+        "16": ("Ice Cream (Scoop)", 70),
+        "17": ("Fruit Salad", 80)
+    },
+    "Beverages": {
+        "18": ("Soft Drink (Bottle)", 40),
+        "19": ("Fresh Lime Soda", 60),
+        "20": ("Masala Chai", 25),
+        "21": ("Coffee", 35)
+    }
+}
+
+# Build a flat lookup: id -> (name, price, category)
+id_lookup = {}
+for cat, items in darling_menu.items():
+    for iid, (name, price) in items.items():
+        id_lookup[iid] = (name, price, cat)
+
+cart = defaultdict(int)
+
+def show_help():
+    print("""
+📖 Commands:
+  menu                        -> Show full menu
+  menu <category>             -> Show one category (Starters/Main Course/Snacks/Desserts/Beverages)
+  add <id> [qty]              -> Add item to cart (default qty=1). Example: add 6 2
+  remove <id> [qty]           -> Remove item from cart. Example: remove 6 1
+  cart                        -> View items in cart
+  checkout                    -> Bill & payment link (placeholder)
+  help                        -> Show this help
+  exit                        -> Quit
+""")
+
+def show_menu(category=None):
+    if category:
+        # Case-insensitive match for category
+        match = None
+        for cat in darling_menu:
+            if cat.lower() == category.lower():
+                match = cat
+                break
+        if not match:
+            print(f"⚠️ Category '{category}' not found.")
+            print("Available:", ", ".join(darling_menu.keys()))
+            return
+        print(f"\n🍽️ {match}")
+        for iid, (name, price) in darling_menu[match].items():
+            print(f"{iid}. {name} - ₹{price}")
+        print()
+        return
+
+    print("\n🍴 Darling Hotel Menu")
+    for cat, items in darling_menu.items():
+        print(f"\n🧾 {cat}")
+        for iid, (name, price) in items.items():
+            print(f"{iid}. {name} - ₹{price}")
+    print()
+
+def add_item(iid, qty=1):
+    if iid not in id_lookup:
+        print("❌ Invalid item ID.")
+        return
+    if qty <= 0:
+        print("❌ Quantity must be positive.")
+        return
+    cart[iid] += qty
+    name, price, _ = id_lookup[iid]
+    print(f"✅ Added: {name} × {qty} (₹{price} each)")
+
+def remove_item(iid, qty=1):
+    if iid not in cart or cart[iid] <= 0:
+        print("❌ Item not in cart.")
+        return
+    if qty <= 0:
+        print("❌ Quantity must be positive.")
+        return
+    cart[iid] -= qty
+    if cart[iid] <= 0:
+        del cart[iid]
+        print("🗑️ Removed item from cart.")
+    else:
+        print(f"➖ Reduced quantity. Remaining: {cart[iid]}")
+
+def view_cart():
+    if not cart:
+        print("🛒 Cart is empty.")
+        return
+    print("\n🛒 Your Cart:")
+    subtotal = 0
+    for iid, qty in cart.items():
+        name, price, _ = id_lookup[iid]
+        line = price * qty
+        subtotal += line
+        print(f"- {name} × {qty} = ₹{line}")
+    # Optional: simple tax/service charge
+    tax_rate = 0.05  # 5% GST (example)
+    service_charge_rate = 0.05  # 5% service (example)
+    gst = round(subtotal * tax_rate)
+    service = round(subtotal * service_charge_rate)
+    total = subtotal + gst + service
+    print(f"\nSubtotal : ₹{subtotal}")
+    print(f"GST 5%   : ₹{gst}")
+    print(f"Service  : ₹{service}")
+    print(f"Grand Total: 💰 ₹{total}\n")
+
+def checkout():
+    if not cart:
+        print("⚠️ Cart is empty. Add some items first.")
+        return False
+
+    print("\n🧾 Order Summary:")
+    subtotal = 0
+    for iid, qty in cart.items():
+        name, price, _ = id_lookup[iid]
+        line = price * qty
+        subtotal += line
+        print(f"- {name} × {qty} = ₹{line}")
+
+    tax_rate = 0.05
+    service_charge_rate = 0.05
+    gst = round(subtotal * tax_rate)
+    service = round(subtotal * service_charge_rate)
+    total = subtotal + gst + service
+
+    print(f"\nSubtotal  : ₹{subtotal}")
+    print(f"GST 5%    : ₹{gst}")
+    print(f"Service   : ₹{service}")
+    print(f"Grand Total: 💰 ₹{total}")
+
+    # 🔗 Payment placeholder (plug your gateway API here)
+    print("\n💳 Generating payment link...")
+    print("👉 [Dummy Payment Link] https://pay.example.com/darling-order-123")
+    print("✅ After payment, you'll receive confirmation.")
+    return True
+
+def main():
+    print("🤖 Welcome to Darling Hotel Chatbot (INR)!")
+    show_help()
+    while True:
+        try:
+            raw = input("You: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n👋 Goodbye!")
+            break
+
+        if not raw:
+            continue
+
+        parts = raw.split()
+        cmd = parts[0].lower()
+
+        if cmd == "help":
+            show_help()
+
+        elif cmd == "menu":
+            if len(parts) > 1:
+                show_menu(" ".join(parts[1:]))
+            else:
+                show_menu()
+
+        elif cmd == "add":
+            if len(parts) < 2:
+                print("Usage: add <id> [qty]")
+                continue
+            iid = parts[1]
+            qty = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 1
+            add_item(iid, qty)
+
+        elif cmd == "remove":
+            if len(parts) < 2:
+                print("Usage: remove <id> [qty]")
+                continue
+            iid = parts[1]
+            qty = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else 1
+            remove_item(iid, qty)
+
+        elif cmd == "cart":
+            view_cart()
+
+        elif cmd == "checkout":
+            done = checkout()
+            if done:
+                break
+
+        elif cmd == "exit":
+            print("👋 Thanks for visiting Darling Hotel. Goodbye!")
+            break
+
+        else:
+            print("❓ Unknown command. Type 'help' for options.")
+
+if __name__ == "__main__":
+    main()
